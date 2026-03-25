@@ -1,0 +1,45 @@
+#include <Servo.h>
+
+Servo gate Servo;
+
+const int sensor1 = 2;  // IR sensor near the gate (train arriving)
+const int sensor2 = 3;  // IR sensor after the gate (train left)
+const int red LED = 4;
+const int green LED = 5;
+const int buzzer = 6;
+
+void setup() {
+  gate Servo.attach (9);  // Servo motor pin
+  pin Mode (sensor1, INPUT);
+  pin Mode (sensor2, INPUT);
+  pin Mode (red LED, OUTPUT);
+  pin Mode (green LED, OUTPUT);
+  pin Mode (buzzer, OUTPUT);
+
+  // Initial state
+  Digital Write(green LED, HIGH); // Gate open
+  Digital Write(red LED, LOW);
+  Digital  Write(buzzer, LOW);
+  Gate Servo. write(0);  // Gate open position
+}
+
+void loop() {
+  int train Arriving = digital Read(sensor1);
+  int train Leaving = digital Read(sensor2);
+
+  if (train Arriving == LOW) { // Train detected
+    digital Write(buzzer, HIGH);
+    digital Write(green LED, LOW);
+    digital Write(red LED, HIGH);
+    gate Servo. write(90);  // Close gate
+    delay(2000);  // Wait for the gate to close
+  }
+
+  if (train Leaving == LOW) { // Train has passed
+    digital Write(buzzer, LOW);
+    digital Write(red LED, LOW);
+    digital Write(green LED, HIGH);
+    gate Servo. write(0);  // Open gate
+    delay(2000);  // Wait for the gate to open
+  }
+}

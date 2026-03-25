@@ -1,1 +1,105 @@
-create test1.txt
+clc;
+clear;
+close all;
+
+% Parameters
+nodes = 6;
+rounds = 30;
+
+E_tx = 2;   
+E_rx = 1;   
+
+% Initial Energy (random for realistic behavior)
+energy_normal = 40 + rand(1, nodes)*20;
+energy_ahymn  = energy_normal + 10;   % AHYMN advantage
+
+% Alive nodes storage
+alive_normal = zeros(1, rounds);
+alive_ahymn  = zeros(1, rounds);
+
+% Clusters
+cluster1 = [1 2 3];
+cluster2 = [4 5 6];
+
+% ================= NORMAL ROUTING =================
+for r = 1:rounds
+    for i = 1:nodes
+        
+        if energy_normal(i) > 0
+            % Direct transmission (high energy loss)
+            energy_normal(i) = energy_normal(i) - (E_tx + 3);
+        end
+        
+        if energy_normal(i) < 0
+            energy_normal(i) = 0;
+        end
+    end
+    
+    alive_normal(r) = sum(energy_normal > 0);
+end
+
+% ================= AHYMN ROUTING =================
+for r = 1:rounds
+    
+    % Rotate Cluster Heads
+    CH1 = cluster1(mod(r-1, length(cluster1)) + 1);
+    CH2 = cluster2(mod(r-1, length(cluster2)) + 1);
+    
+    % -------- Cluster 1 --------
+    for i = cluster1
+        
+        if energy_ahymn(i) > 0
+            
+            if i == CH1
+                % CH sends to sink (optimized)
+                energy_ahymn(i) = energy_ahymn(i) - (E_tx + 0.5);
+            else
+                % Node sends to CH
+                energy_ahymn(i) = energy_ahymn(i) - E_tx;
+                
+                if energy_ahymn(CH1) > 0
+                    energy_ahymn(CH1) = energy_ahymn(CH1) - 0.5;
+                end
+            end
+        end
+        
+        if energy_ahymn(i) < 0
+            energy_ahymn(i) = 0;
+        end
+    end
+    
+    % -------- Cluster 2 --------
+    for i = cluster2
+        
+        if energy_ahymn(i) > 0
+            
+            if i == CH2
+                energy_ahymn(i) = energy_ahymn(i) - (E_tx + 0.5);
+            else
+                energy_ahymn(i) = energy_ahymn(i) - E_tx;
+                
+                if energy_ahymn(CH2) > 0
+                    energy_ahymn(CH2) = energy_ahymn(CH2) - 0.5;
+                end
+            end
+        end
+        
+        if energy_ahymn(i) < 0
+            energy_ahymn(i) = 0;
+        end
+    end
+    
+    alive_ahymn(r) = sum(energy_ahymn > 0);
+end
+
+% ================= GRAPH =================
+figure;
+plot(1:rounds, alive_normal, 'r', 'LineWidth', 2);
+hold on;
+plot(1:rounds, alive_ahymn, 'g', 'LineWidth', 2);
+
+xlabel('Rounds');
+ylabel('Alive Nodes');
+title('Comparison: Normal vs AHYMN');
+legend('Normal Routing', 'AHYMN Routing');
+grid on;
